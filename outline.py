@@ -96,13 +96,13 @@ class Exporter:
     
 def main():
     #path = input('File Name: ')
-    path = 'lnlp.pdf' #filename goes here    
-    
+    path = ... #filename goes here    
+    '''
     importer = Importer()
     importer.writer.append(PdfReader(path), import_outline=False)
     importer.import_bookmarks('bookmarks.json')
     importer.writer.write('output.pdf')
-    
+    '''
     #exporter = Exporter(PdfReader(path))
     #exporter.export_bookmarks('output.json')
 
