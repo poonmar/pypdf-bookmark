@@ -1,5 +1,5 @@
 from pypdf import PdfWriter, PdfReader
-from pypdf.generic import Fit
+from pypdf.generic import Fit, Destination
 import json
 
 class Importer:
@@ -9,7 +9,12 @@ class Importer:
             self.writer = PdfWriter()
         else:
             self.writer = writer
-
+    
+    def _parse_color(self, color):
+        if isinstance(color, list):
+            return tuple([value / 255 for value in color])
+        return color
+    
     def get_fit(self, items: dict) -> Fit:
         
         fit_type = items.get('type')
@@ -22,16 +27,15 @@ class Importer:
             'FitB': Fit.fit_box(),
             'FitBV': Fit.fit_box_vertically(items.get('left'))
         }
-        return types.get(fit_type, Fit.fit())
-
-
+        return types.get(fit_type, Fit.fit())   
+    
     def add_outlines(self, entries: list, parent=None):
         for entry in entries:
             outline_ref = self.writer.add_outline_item(
                                                     entry['title'],
                                                     entry['page'] - 1,
                                                     parent,
-                                                    color=None,
+                                                    color=self._parse_color(entry.get('color')),
                                                     bold=entry.get('bold'),
                                                     italic=entry.get('italic'),
                                                     fit=self.get_fit(entry),
@@ -50,6 +54,16 @@ class Exporter:
 
     def __init__(self, reader: PdfReader):
         self.reader = reader
+        self.outline = reader.outline
+
+    def _get_font_format(self, outline):
+        #1=italic,2=bold,3=both
+        formats = {}
+        if outline.font_format > 2:
+            formats['bold'] = True
+        if outline.font_format % 2 == 1:
+            formats['italic'] = True
+        return formats
 
     def build_tree(self, vals: list) -> list:
         lst = []
@@ -57,30 +71,39 @@ class Exporter:
             if isinstance(item, list):
                 prev['children'] = self.build_tree(item)
             else:
-                prev = {
+                attrs = {
                         'title': item.title,
-                        'page': self.reader._get_page_number_by_indirect(item.page)
+                        'page': self.reader._get_page_number_by_indirect(item.page) + 1,
+                        'type': item.typ,
+                        'zoom': item.zoom if item.zoom != 0 else None,
+                        'left': item.left,
+                        'right': item.right,
+                        'top': item.top,
+                        'bottom': item.bottom,
+                        'color': [round(cvals * 255) for cvals in item.color] if item.color != [0.0,0.0,0.0] else None,
                         }
+                attrs.update(self._get_font_format(item))
+                if item.outline_count:
+                    attrs['is-open'] = item.outline_count > 0
 
-                attr = {'color': item.color, 'bold': item.bold, 'type': item.type, 'is-open': item.is_open}
-                for key, val in attr.items():
-                    if val:
-                        prev[key] = val
+                prev = {key: val for key, val in attrs.items() if val is not None}
                 lst.append(prev)
         return lst
 
-    def export_bookmarks(self, path: str):
+    def export_bookmarks(self, path: str, indent=4):
         with open(path, 'w') as file:
-            json.dump(self.build_tree(self.reader.outline), file, indent=1)
+            json.dump(self.build_tree(self.outline), file, indent=indent)
     
 def main():
-    path = input('File Name: ')
+#    path = input('File Name: ')
+    path = 'test.pdf'
+    '''
     importer = Importer()
     importer.writer.append(PdfReader(path), import_outline=False)
     importer.import_bookmarks('bookmarks.json')
     importer.writer.write('output.pdf')
-
-    exporter = Exporter(PdfReader('output.pdf'))
+    '''
+    exporter = Exporter(PdfReader(path))
     exporter.export_bookmarks('output.json')
 
 
