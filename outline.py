@@ -74,8 +74,8 @@ class Exporter:
                 attrs = {
                         'title': item.title,
                         'page': self.reader._get_page_number_by_indirect(item.page) + 1,
-                        'type': item.typ,
-                        'zoom': item.zoom if item.zoom != 0 else None,
+                        'type': item.typ.strip('/'),
+                        'zoom': item.zoom if isinstance(item.zoom, int) and item.zoom else None,
                         'left': item.left,
                         'right': item.right,
                         'top': item.top,
@@ -95,16 +95,16 @@ class Exporter:
             json.dump(self.build_tree(self.outline), file, indent=indent)
     
 def main():
-#    path = input('File Name: ')
-    path = 'test.pdf'
-    '''
+    #path = input('File Name: ')
+    path = 'lnlp.pdf' #filename goes here    
+    
     importer = Importer()
     importer.writer.append(PdfReader(path), import_outline=False)
     importer.import_bookmarks('bookmarks.json')
     importer.writer.write('output.pdf')
-    '''
-    exporter = Exporter(PdfReader(path))
-    exporter.export_bookmarks('output.json')
+    
+    #exporter = Exporter(PdfReader(path))
+    #exporter.export_bookmarks('output.json')
 
 
 if __name__ == '__main__':
