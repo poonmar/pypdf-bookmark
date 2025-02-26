@@ -10,7 +10,7 @@ TYPES = {'title': str,
          'type': str,
          'is_open': bool
         }
-
+'''
 def validate_entry(entry: dict) -> str:
     for attr in CONTAINS:
         if attr not in entry:
@@ -20,7 +20,7 @@ def validate_entry(entry: dict) -> str:
             return f'{key} is not a valid attribute!'
         elif not isinstance(item, TYPES[key]):
             return f'{item} is not of type {str(TYPES[key])}!'
-
+'''
 
 
 
